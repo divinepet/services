@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: influxdb-pv-claim
+  labels:
+    app: influxdb-pvc
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb-svc
+  labels:
+    app  : influxdb-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: influxdb
+  ports:
+  - name      : port-influxdb
+    protocol  : TCP
+    port      : 8086
+    targetPort: 8086
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxdb-deployment
+  labels:
+    app  : influxdb
+spec:
+  selector:
+    matchLabels:
+       app: influxdb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels: 
+        app  : influxdb
+    spec:
+      containers:
+      - name: influxdb-deployment
+        image: influxdb-image
+        volumeMounts:
+        - name: influxdb-data
+          mountPath: /var/lib
+        - name: dockersock
+          mountPath: /var/run/docker.sock
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8086
+      volumes:
+      - name: influxdb-data
+        persistentVolumeClaim:
+          claimName: influxdb-pv-claim
+      - name: dockersock
+        hostPath:
+            path: /var/run/docker.sock

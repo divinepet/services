@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-deployment
+  labels:
+    app  : wordpress
+    owner: elaronda
+spec:
+  selector:
+    matchLabels:
+       app: wordpress
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        owner: elaronda
+    spec:
+      containers:
+      - image: wordpress-image
+        name: wordpress
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5050
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-svc
+  annotations:
+    metallb.universe.tf/allow-shared-ip: minikube
+  labels:
+    app: wordpress-svc
+    owner: elaronda
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 192.168.99.101
+  ports:
+    - protocol: TCP
+      name: wp
+      port: 5050
+      targetPort: 5050
+  selector:
+    app: wordpress
